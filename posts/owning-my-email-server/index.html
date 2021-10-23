@@ -1,0 +1,22 @@
+<!doctype html><html lang=en-us>
+<style>body{margin:0 auto;max-width:50em;font-family:georgia,arial,sans-serif;line-height:1.5;padding:1em 1em 4em;font-size:1.5em;color:#555}</style>
+<body>
+<h1>Owning my email server</h1>
+<p>A couple weeks ago I decided I should start de-googling and owning my own stuff on the internet, I thought it would be a good exercise to start by hosting my own email server. The attacks that fastmail (my current email provider for this domain) have been taking lately also contributed to the decision of hosting email on my own.</p>
+<p>Disclaimer: I&rsquo;ve worked for many years in the past as a network/sysadmin and I&rsquo;ve had to admin servers with thousands and thousands of email accounts.</p>
+<p>After spending a couple of hours reading documentation and setting configurations (nothing much changed from 10 years ago) I came with the following stack to start:</p>
+<ul>
+<li>dovecot as an imap and lmtp server</li>
+<li>postfix as a smtp server authenticating via dovecot lmtp</li>
+<li>dns configuration for spf</li>
+<li>opendkim for DKIM signatures and verification</li>
+</ul>
+<p>I&rsquo;ve decided to not have a webmail, since I will always have a device capable of imap and smtp at hand. And I didn&rsquo;t want to have one extra application exposing my server to be exploited. The less attack surface the better.</p>
+<p>The things that I still have to figure out are:</p>
+<ul>
+<li>antispam software</li>
+<li>backup solution</li>
+</ul>
+<p>Am I missing something? Please let me know your suggestions for antispam and backup solutions, find me out on mastodon network <code>@loop0@fosstodon.org</code></p>
+</body>
+</html>
