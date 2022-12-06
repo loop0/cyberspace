@@ -22,4 +22,4 @@ The things that I still have to figure out are:
 * antispam software
 * backup solution
 
-Am I missing something? Please let me know your suggestions for antispam and backup solutions, find me out on mastodon network `@loop0@fosstodon.org`
+Am I missing something? Please let me know your suggestions for antispam and backup solutions, find me out on mastodon network `@loop0@freeradical.zone`
