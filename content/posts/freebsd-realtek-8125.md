@@ -19,7 +19,7 @@ pkg install realtek-re-kmod
 
 2. Add the following 2 lines to your `/boot/loader.conf`:
 
-```
+```conf
 if_re_load="YES"
 if_re_name="/boot/modules/if_re.ko"
 ```
@@ -27,7 +27,7 @@ if_re_name="/boot/modules/if_re.ko"
 3. Reboot your server
 4. You should be able to see the your device listed with `ifconfig`
 
-```
+```sh
 re0: flags=1008943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST,LOWER_UP> metric 0 mtu 1500
 ```
 
