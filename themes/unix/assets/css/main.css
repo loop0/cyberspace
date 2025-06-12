@@ -4,13 +4,7 @@ body {
   line-height: 1.5;
   margin: auto;
   max-width: 768px;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #121212;
-    color: #ffffff;
-  }
+  padding: 1rem;
 }
 
 header {
@@ -79,7 +73,7 @@ ul.top-menu li:last-child {
   display: inline-block;
   margin-right: 0.5em;
   padding: 0.2em 0.5em;
-  background-color: #fff;
+  background-color: #121212;
   border-radius: 4px;
 }
 
@@ -97,4 +91,15 @@ ul.top-menu li:last-child {
     to {
         visibility: hidden;
     }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #121212;
+    color: #ffffff;
+  }
+
+  .taxonomy {
+    background-color: #fff;
+  }
 }
