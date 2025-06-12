@@ -1,3 +1,41 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>security on loop0</title><link>https://loop0.sh/tags/security/</link><description>Recent content in security on loop0</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sat, 04 Apr 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://loop0.sh/tags/security/index.xml" rel="self" type="application/rss+xml"/><item><title>How to check supported protocols and ciphers on HTTPS</title><link>https://loop0.sh/posts/show-supported-ciphers/</link><pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/show-supported-ciphers/</guid><description>In case you need to check which protocols and ciphers are supported on a HTTPS endpoint you can use nmap for that. Just use the following command, replacing loop0.sh for the desired domain.
-nmap --script ssl-enum-ciphers -p 443 loop0.sh The previous command should give you an output like this:
-Nmap scan report for loop0.sh (104.24.102.73) Host is up (0.022s latency). Other addresses for loop0.sh (not scanned): 104.24.103.73 2606:4700:3037::6818:6749 2606:4700:3033::6818:6649 PORT STATE SERVICE 443/tcp open https | ssl-enum-ciphers: | TLSv1.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Security on loop0</title><link>https://loop0.sh/tags/security/</link><description>Recent content in Security on loop0</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Sat, 04 Apr 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://loop0.sh/tags/security/index.xml" rel="self" type="application/rss+xml"/><item><title>How to check supported protocols and ciphers on HTTPS</title><link>https://loop0.sh/posts/show-supported-ciphers/</link><pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/show-supported-ciphers/</guid><description>&lt;p>In case you need to check which protocols and ciphers are supported on a HTTPS endpoint you can use nmap for that. Just use the following command, replacing &lt;code>loop0.sh&lt;/code> for the desired domain.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>nmap --script ssl-enum-ciphers -p &lt;span style="color:#ae81ff">443&lt;/span> loop0.sh
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The previous command should give you an output like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>Nmap scan report &lt;span style="color:#66d9ef">for&lt;/span> loop0.sh &lt;span style="color:#f92672">(&lt;/span>104.24.102.73&lt;span style="color:#f92672">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Host is up &lt;span style="color:#f92672">(&lt;/span>0.022s latency&lt;span style="color:#f92672">)&lt;/span>.
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Other addresses &lt;span style="color:#66d9ef">for&lt;/span> loop0.sh &lt;span style="color:#f92672">(&lt;/span>not scanned&lt;span style="color:#f92672">)&lt;/span>: 104.24.103.73 2606:4700:3037::6818:6749 2606:4700:3033::6818:6649
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>PORT STATE SERVICE
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>443/tcp open https
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| ssl-enum-ciphers: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLSv1.0: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| ciphers: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| compressors: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| NULL
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| cipher preference: server
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLSv1.1: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| ciphers: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| compressors: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| NULL
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| cipher preference: server
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLSv1.2: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| ciphers: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256-draft &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 &lt;span style="color:#f92672">(&lt;/span>prime256v1&lt;span style="color:#f92672">)&lt;/span> - A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| compressors: 
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| NULL
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>| cipher preference: server
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>|_ least strength: A
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Nmap &lt;span style="color:#66d9ef">done&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span> IP address &lt;span style="color:#f92672">(&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span> host up&lt;span style="color:#f92672">)&lt;/span> scanned in 5.49 seconds
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item></channel></rss>
