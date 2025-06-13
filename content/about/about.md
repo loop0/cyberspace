@@ -6,6 +6,6 @@ draft: false
 
 Welcome to my online space. I use this space to post about a few things that I do in my spare time
 that I think could be useful to some random netizen. I'm not great at writing so I like to keep things
-short and sweet. I love all things operating systems and programming languages. My pronouns are he/him/his. My operating systems of choices are **centos**,  **debian**,  **fedora**, **freebsd** and **openbsd**, not in any specific order but whenever it is the right tool for the job. The programming languages that I most use are python, ruby and go.
+short and sweet. I love all things operating systems and programming languages. My pronouns are he/him/his. My operating systems of choice are **centos**,  **debian**,  **fedora**, **freebsd** and **openbsd**, not in any specific order but whenever it is the right tool for the job. The programming languages that I mostly use are python, ruby and go.
 
-If you want to contact me, please send me a message on [mastodon](https://freeradical.zone/@loop0)! 
+If you want to contact me, please send me a message on [mastodon](https://freeradical.zone/@loop0)!
