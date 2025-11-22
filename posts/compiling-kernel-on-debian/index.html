@@ -21,6 +21,7 @@ If you are copy and pasting, make sure you ommit the <code>$</code> char.</p></b
 </span></span><span style=display:flex><span>$ scripts/config --disable DEBUG_INFO
 </span></span></code></pre></div><ol start=10><li>One last step before compiling the kernel, lets copy the signing key</li></ol><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>$ sudo cp /var/lib/dkms/mok.key certs/mok.key
 </span></span><span style=display:flex><span>$ sudo cat /var/lib/dkms/mok.crt &gt;&gt; certs/mok.key
+</span></span><span style=display:flex><span>$ sudo chown $USER certs/mok.key
 </span></span></code></pre></div><ol start=11><li>Now to the step that we compile the kernel and generate a .deb package for installation</li></ol><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span><span style=color:#75715e># Adjust the number from -j16 to the number of cores your computer has for faster compilation</span>
 </span></span><span style=display:flex><span><span style=color:#75715e># LOCALVERSION is optional, you can change it to anything you want, it will become part of the kernel version</span>
 </span></span><span style=display:flex><span><span style=color:#75715e># The make command will ask you for configuration options that don&#39;t exist from the current kernel config that</span>
