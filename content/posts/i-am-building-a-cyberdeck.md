@@ -23,7 +23,7 @@ I'm going to use this blog to document the whole project.
 
 I received the display already in the mail and I had an rpi zero around, so I decided to do a quick bring up:
 
-<img src="/cyberdeck_bringup.jpg" alt="Cyberdeck bringup" style="max-width: 800px;">
+![Cyberdeck bringup](/cyberdeck_bringup.jpg)
 
 I had some trouble to get the display running under the raspberry pi so I'm going to paste here what I had to do.
 
@@ -45,8 +45,7 @@ And the final thing was to append `fbcon=rotate:1` to `cmdline.txt` to get the c
 And the file ended up looking like this:
 ```sh
 # /boot/cmdline.txt
-console=serial0,115200 console=tty1 root=PARTUUID=a105aa79-02 rootfstype=ext4 
-fsck.repair=yes rootwait fbcon=rotate:1
+console=serial0,115200 console=tty1 root=PARTUUID=a105aa79-02 rootfstype=ext4 fsck.repair=yes rootwait fbcon=rotate:1
 ```
 
 That's it for today, now I wait for the keyboard parts to get the project going. See you on the next post.
