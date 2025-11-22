@@ -1,0 +1,16 @@
+{{ define "main" }}
+<h1 class="title"><pre>{{ .Site.Title }}</pre></h1>
+
+{{ .Content }}
+
+<h2>Latest blog posts:</h2>
+
+{{- range (where site.RegularPages "Section" "posts" | first 3) }}
+<h3>
+    <span>{{ .Date.Format "2006-01-02" }}</span>
+    {{ .Title }}
+</h3>
+<p>{{ .Summary }}</p>
+<p><a href="{{ .RelPermalink }}">Continue reading...</a></p>
+{{ end }}
+{{ end }}

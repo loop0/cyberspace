@@ -1,0 +1,4 @@
+baseURL = 'https://loop0.sh/'
+languageCode = 'en-us'
+title = 'loop0'
+theme = "basictee"
