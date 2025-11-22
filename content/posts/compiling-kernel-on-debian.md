@@ -61,6 +61,7 @@ $ scripts/config --disable DEBUG_INFO
 ```sh
 $ sudo cp /var/lib/dkms/mok.key certs/mok.key
 $ sudo cat /var/lib/dkms/mok.crt >> certs/mok.key
+$ sudo chown $USER certs/mok.key
 ```
 11. Now to the step that we compile the kernel and generate a .deb package for installation
 ```sh
