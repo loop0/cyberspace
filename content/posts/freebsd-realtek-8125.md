@@ -19,7 +19,7 @@ pkg install realtek-re-kmod
 
 2. Add the following 2 lines to your `/boot/loader.conf`:
 
-```conf
+```sh
 if_re_load="YES"
 if_re_name="/boot/modules/if_re.ko"
 ```
