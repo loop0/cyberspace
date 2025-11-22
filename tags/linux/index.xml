@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Linux on loop0</title><link>https://loop0.sh/tags/linux/</link><description>Recent content in Linux on loop0</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Fri, 21 Nov 2025 09:40:58 -0500</lastBuildDate><atom:link href="https://loop0.sh/tags/linux/index.xml" rel="self" type="application/rss+xml"/><item><title>Compiling Kernel on Debian With Secure Boot Support</title><link>https://loop0.sh/posts/compiling-kernel-on-debian/</link><pubDate>Fri, 21 Nov 2025 09:40:58 -0500</pubDate><guid>https://loop0.sh/posts/compiling-kernel-on-debian/</guid><description>&lt;h1 id="compiling-a-custom-kernel-on-debian-with-support-for-secure-boot">Compiling a custom kernel on debian with support for secure boot&lt;/h1>
+&lt;p>I recently installed debian 13 on my workstation and I wanted to have a newer kernel, and also experiment with PREEMPT_RT.
+So I decided to learn how to compile a custom kernel and I will try to document the steps here for future reference.&lt;/p>
+&lt;h2 id="steps">Steps&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;code>INSTRUCTIONS&lt;/code>:
+The character &lt;code>$&lt;/code> found at the beginning tells that the following is a command to be run in a shell.
+If you are copy and pasting, make sure you ommit the &lt;code>$&lt;/code> char.&lt;/p></description></item></channel></rss>
