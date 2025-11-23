@@ -5,7 +5,106 @@ So I decided to learn how to compile a custom kernel and I will try to document 
 &lt;blockquote>
 &lt;p>&lt;code>INSTRUCTIONS&lt;/code>:
 The character &lt;code>$&lt;/code> found at the beginning tells that the following is a command to be run in a shell.
-If you are copy and pasting, make sure you ommit the &lt;code>$&lt;/code> char.&lt;/p></description></item><item><title>Realtek 8125 2.5Gb Ethernet work on FreeBSD</title><link>https://loop0.sh/posts/freebsd-realtek-8125/</link><pubDate>Sun, 01 Jun 2025 20:36:10 -0400</pubDate><guid>https://loop0.sh/posts/freebsd-realtek-8125/</guid><description>&lt;p>I decided to migrate my virtualization host to FreeBSD bhyve.
+If you are copy and pasting, make sure you ommit the &lt;code>$&lt;/code> char.&lt;/p>&lt;/blockquote>
+&lt;p>This was executed on stock debian 13.2 YMMV:&lt;/p>
+&lt;ol>
+&lt;li>Download the kernel source code tarball from &lt;a href="https://kernel.org">https://kernel.org&lt;/a>&lt;/li>
+&lt;li>Install the following dependencies:&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo apt install build-essential dkms flex bison libdw-dev libelf-dev libssl-dev libssl-dev rsync debhelper-compat sbsigntool ncurses-dev
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="3">
+&lt;li>Generate the dkms signing keys&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo dkms generate_mok
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="4">
+&lt;li>Import your dkms keys to be enrolled in secure boot&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo mokutil --import /var/lib/dkms/mok.pub
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="5">
+&lt;li>Reboot your computer, your bios should show a utility to enroll the newly imported key&lt;/li>
+&lt;li>Lets export certificate of the key you just enrolled&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ cd /tmp
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo mokutil --export
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># This can generate many files with the filename following the pattern MOK-0001.der&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Run the following command file by file until you find your DKMS keys&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ openssl x509 -inform DER -in MOK-0002.der -text -noout | grep &lt;span style="color:#e6db74">&amp;#34;Subject:&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> Subject: CN&lt;span style="color:#f92672">=&lt;/span>DKMS module signing key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Once you find the key with the DKMS subject you can export the certificate&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo openssl x509 -inform DER -in MOK-0002.der -outform PEM -out /var/lib/dkms/mok.crt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="7">
+&lt;li>Lets proceed to extract the linux kernel source code from the tarball you download on step 1&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ tar xfv ~/Downloads/linux-6.17.8.tar.xz
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ cd linux-6.17.8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="8">
+&lt;li>Now is the time to configure your kernel, we begin by using the config provided by the current kernel as a starting point&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ cp /boot/config-6.12.57+deb13-amd64 .config
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="9">
+&lt;li>Lets disable the debug info (optional)&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ scripts/config --disable DEBUG_INFO
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="10">
+&lt;li>One last step before compiling the kernel, lets copy the signing key&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo cp /var/lib/dkms/mok.key certs/mok.key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo cat /var/lib/dkms/mok.crt &amp;gt;&amp;gt; certs/mok.key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo chown $USER certs/mok.key
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="11">
+&lt;li>Now to the step that we compile the kernel and generate a .deb package for installation&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Adjust the number from -j16 to the number of cores your computer has for faster compilation&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># LOCALVERSION is optional, you can change it to anything you want, it will become part of the kernel version&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># The make command will ask you for configuration options that don&amp;#39;t exist from the current kernel config that&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># we used as a starting point, you can proceed to just hit return to use the default or run make nconfig to &lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># configure your kernel using a terminal UI&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ make -j16 bindeb-pkg CONFIG_MODULE_SIG_KEY&lt;span style="color:#f92672">=&lt;/span>certs/mok.key SIGN_KEY&lt;span style="color:#f92672">=&lt;/span>certs/mok.key LOCALVERSION&lt;span style="color:#f92672">=&lt;/span>-loop0-rt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="12">
+&lt;li>Before you install the newly generated debian package lets add a kernel post install hook to take care of the
+signing part&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo bash -c &lt;span style="color:#e6db74">&amp;#39;cat &amp;lt;&amp;lt; EOF &amp;gt; /etc/kernel/postinst.d/zz-sign-kernel
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">#!/bin/bash
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">set -e
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"># Path to your signing key and certificate
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">SIGN_KEY=&amp;#34;/var/lib/dkms/mok.key&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">SIGN_CERT=&amp;#34;/var/lib/dkms/mok.crt&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"># The kernel image to sign
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">KERNEL_IMAGE=&amp;#34;\$2&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">if [ -f &amp;#34;\$KERNEL_IMAGE&amp;#34; ] &amp;amp;&amp;amp; [ -f &amp;#34;\$SIGN_KEY&amp;#34; ] &amp;amp;&amp;amp; [ -f &amp;#34;\$SIGN_CERT&amp;#34; ]; then
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Signing kernel image: \$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> sbsign --key &amp;#34;\$SIGN_KEY&amp;#34; --cert &amp;#34;\$SIGN_CERT&amp;#34; --output &amp;#34;\$KERNEL_IMAGE.signed&amp;#34; &amp;#34;\$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> 
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> # Replace the unsigned kernel with the signed one
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> mv &amp;#34;\$KERNEL_IMAGE.signed&amp;#34; &amp;#34;\$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> 
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Kernel signed successfully&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">else
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Warning: Could not sign kernel - missing kernel image or signing keys&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">fi
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">exit 0
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">EOF&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo chmod +x /etc/kernel/postinst.d/zz-sign-kernel
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="13">
+&lt;li>Now you should be able to install your new kernel&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo apt install ../linux-image-6.17.8-loop0-rt_6.17.8-13_amd64.deb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="14">
+&lt;li>Reboot and check if your new kernel worked, if you can&amp;rsquo;t boot just go to the advanced section on grub screen
+and you should be able to boot your old kernel&lt;/li>
+&lt;/ol>
+&lt;p>Enjoy! If you find any issue in the instructions, please let me know so I can fix it, thanks!&lt;/p>
+&lt;h2 id="references">References&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://kernel-team.pages.debian.net/kernel-handbook/index.html">Debian Kernel Handbook&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://wiki.debian.org/SecureBoot#MOK_-_Machine_Owner_Key">Debian Secure Boot&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>Realtek 8125 2.5Gb Ethernet work on FreeBSD</title><link>https://loop0.sh/posts/freebsd-realtek-8125/</link><pubDate>Sun, 01 Jun 2025 20:36:10 -0400</pubDate><guid>https://loop0.sh/posts/freebsd-realtek-8125/</guid><description>&lt;p>I decided to migrate my virtualization host to FreeBSD bhyve.
 During installation in my current hardware and one of the issues I had was the
 ethernet interface not being recognized in the system. Luckily I had access
 through a usb ethernet so I could run the following steps to make my onboard
@@ -34,10 +133,123 @@ when doing local development, like this:&lt;/p>
 &lt;p>&lt;img src="https://loop0.sh/console_renderer.png" alt="Console Renderer">&lt;/p>
 &lt;h2 id="django">Django&lt;/h2>
 &lt;p>It turns out it is very simple to have it working on Django as well, all you need is to add the following
-to your &lt;code>settings.py&lt;/code>:&lt;/p></description></item><item><title>Turning a Wired Keyboard Into Wireless</title><link>https://loop0.sh/posts/turning-a-wired-keyboard-into-wireless/</link><pubDate>Wed, 17 Jan 2024 20:20:26 -0500</pubDate><guid>https://loop0.sh/posts/turning-a-wired-keyboard-into-wireless/</guid><description>&lt;p>I currently type on a nice mechanical keyboard from MNT, the &lt;a href="https://shop.mntre.com/products/mnt-reform-usb-keyboard-standalone">MNT Reform Keyboard&lt;/a> but I wish it was wireless to have less cables running through my work desk.&lt;/p>
+to your &lt;code>settings.py&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> structlog
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>LOGGING &lt;span style="color:#f92672">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;version&amp;#34;&lt;/span>: &lt;span style="color:#ae81ff">1&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;disable_existing_loggers&amp;#34;&lt;/span>: &lt;span style="color:#66d9ef">False&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;formatters&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;json_formatter&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;()&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>ProcessorFormatter,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;processor&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>JSONRenderer(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;plain_console&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;()&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>ProcessorFormatter,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;processor&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>dev&lt;span style="color:#f92672">.&lt;/span>ConsoleRenderer(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;key_value&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;()&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>ProcessorFormatter,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;processor&amp;#34;&lt;/span>: structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>KeyValueRenderer(key_order&lt;span style="color:#f92672">=&lt;/span>[&lt;span style="color:#e6db74">&amp;#39;timestamp&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;level&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;event&amp;#39;&lt;/span>, &lt;span style="color:#e6db74">&amp;#39;logger&amp;#39;&lt;/span>]),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;handlers&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;console&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;class&amp;#34;&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;logging.StreamHandler&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;formatter&amp;#34;&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;plain_console&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;root&amp;#34;&lt;/span>: {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;handlers&amp;#34;&lt;/span>: [&lt;span style="color:#e6db74">&amp;#34;console&amp;#34;&lt;/span>],
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;level&amp;#34;&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;INFO&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> },
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>structlog&lt;span style="color:#f92672">.&lt;/span>configure(
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> processors&lt;span style="color:#f92672">=&lt;/span>[
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>filter_by_level,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>TimeStamper(fmt&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#34;iso&amp;#34;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>add_logger_name,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>add_log_level,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>PositionalArgumentsFormatter(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>StackInfoRenderer(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>format_exc_info,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>processors&lt;span style="color:#f92672">.&lt;/span>UnicodeDecoder(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>ProcessorFormatter&lt;span style="color:#f92672">.&lt;/span>wrap_for_formatter,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ],
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> context_class&lt;span style="color:#f92672">=&lt;/span>dict,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> logger_factory&lt;span style="color:#f92672">=&lt;/span>structlog&lt;span style="color:#f92672">.&lt;/span>stdlib&lt;span style="color:#f92672">.&lt;/span>LoggerFactory(),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> cache_logger_on_first_use&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To check the other formatters you just need to change the formatter in the console handler.
+This should give you enough to get started, and if you want to add more features like automatic
+context make sure to check out &lt;a href="https://django-structlog.readthedocs.io/en/latest/index.html">django-structlog&lt;/a>.&lt;/p>
+&lt;p>Now all you have to do is when you want to log something just make sure to use &lt;code>structlog.get_logger&lt;/code> function
+to get your configured logger, like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> structlog
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>logger &lt;span style="color:#f92672">=&lt;/span> structlog&lt;span style="color:#f92672">.&lt;/span>get_logger()
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>logger&lt;span style="color:#f92672">.&lt;/span>info(&lt;span style="color:#e6db74">&amp;#34;User logged in&amp;#34;&lt;/span>, user_id&lt;span style="color:#f92672">=&lt;/span>request&lt;span style="color:#f92672">.&lt;/span>user&lt;span style="color:#f92672">.&lt;/span>id)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="do-you-want-to-hire-me">Do you want to hire me?&lt;/h2>
+&lt;p>Are you in need of a seasoned web developer with over 15 years of experience? Look no further!
+I&amp;rsquo;ve worked with numerous startups, playing a pivotal role in scaling engineering teams from 10 to 150 engineers.
+My expertise spans the entire software development lifecycle, from gathering requirements to implementing solutions,
+conducting automated testing, and setting up automated infrastructure and deployment processes.&lt;/p>
+&lt;p>Whether you&amp;rsquo;re looking to tackle a specific project or need ongoing support, I&amp;rsquo;m here to help.
+Reach out to me at &lt;a href="mailto:hire@loop0.sh">hire@loop0.sh&lt;/a> to learn more about how my skills and experience can benefit your company.
+Let&amp;rsquo;s discuss how I can contribute to your team&amp;rsquo;s success!&lt;/p>
+&lt;p>&lt;code>#python&lt;/code> &lt;code>#django&lt;/code> &lt;code>#go&lt;/code> &lt;code>#rest&lt;/code> &lt;code>#api&lt;/code> &lt;code>#aws&lt;/code> &lt;code>#kubernetes&lt;/code> &lt;code>#cicd&lt;/code> &lt;code>#redis&lt;/code> &lt;code>#postgresql&lt;/code> &lt;code>#mysql&lt;/code> &lt;code>#linux&lt;/code>&lt;/p></description></item><item><title>Turning a Wired Keyboard Into Wireless</title><link>https://loop0.sh/posts/turning-a-wired-keyboard-into-wireless/</link><pubDate>Wed, 17 Jan 2024 20:20:26 -0500</pubDate><guid>https://loop0.sh/posts/turning-a-wired-keyboard-into-wireless/</guid><description>&lt;p>I currently type on a nice mechanical keyboard from MNT, the &lt;a href="https://shop.mntre.com/products/mnt-reform-usb-keyboard-standalone">MNT Reform Keyboard&lt;/a> but I wish it was wireless to have less cables running through my work desk.&lt;/p>
 &lt;p>So I came up with this project to try to turn this keyboard into a wireless one. The PoC I&amp;rsquo;m making is using 2x ESP32-S3
-dev kit boards. The boards have 2 USB-C connections, one for programming and power and the other one can be used as USB-OTG. My idea is to have one board hooked up to a battery and to the keyboard and the other board hooked to the PC. Having the board receiving the keystrokes and sending them via wireless to the PC over a protocol called ESP-NOW.&lt;/p></description></item><item><title>Running veilid server and cli on macos</title><link>https://loop0.sh/posts/running-veilid-server-and-cli-on-macos/</link><pubDate>Fri, 01 Sep 2023 14:21:19 -0400</pubDate><guid>https://loop0.sh/posts/running-veilid-server-and-cli-on-macos/</guid><description>&lt;p>Hello, I decided to start learning how &lt;a href="https://veilid.com/">veilid&lt;/a> works. So the first thought was to get &lt;code>veilid-server&lt;/code> running on my main machine, which is a macbook pro m1 running macos. I&amp;rsquo;m writing this as a guide to myself in the future in case I need to do this again, but feel free to follow it in case it helps.&lt;/p>
-&lt;p>So, first thing is to clone the veilid repository with the following commands:&lt;/p></description></item><item><title>The Cyberdeck Keyboard</title><link>https://loop0.sh/posts/the-cyberdeck-keyboard/</link><pubDate>Sun, 16 Apr 2023 15:03:57 -0400</pubDate><guid>https://loop0.sh/posts/the-cyberdeck-keyboard/</guid><description>&lt;p>So, continuing on my cyberdeck build, this weekend it was time to build its keyboard. The chosen one was a kit from keebd for a 40% ortholinear, using an rp2040 controller and keycaps I chose from drop. Assembling the kit wasn&amp;rsquo;t a hard task, which I will list in the bullet point list below:&lt;/p>
+dev kit boards. The boards have 2 USB-C connections, one for programming and power and the other one can be used as USB-OTG. My idea is to have one board hooked up to a battery and to the keyboard and the other board hooked to the PC. Having the board receiving the keystrokes and sending them via wireless to the PC over a protocol called ESP-NOW.&lt;/p>
+&lt;p>I did some initial tests to verify I am able to have the keyboard side working as expected. So let&amp;rsquo;s go into details
+on what I&amp;rsquo;ve done so far:&lt;/p>
+&lt;p>&lt;strong>The boards&lt;/strong>
+The board I&amp;rsquo;m using is a &lt;code>Teyleten Robot ESP32-S3-DevKitC-1-N8R2&lt;/code> which is basically a clone of the oficial one from Espressif but with USB-C ports instead of Micro USB&lt;/p>
+&lt;p>&lt;strong>Programming&lt;/strong>
+To do the board programming I followed the &lt;a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/linux-macos-setup.html">setup procedure&lt;/a> from Espressif documentation, but TL;DR is:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>brew install cmake ninja dfu-util
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mkdir -p ~/esp
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd ~/esp
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone --recursive https://github.com/espressif/esp-idf.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd esp-idf
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>./install.fish esp32s3
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>. $HOME/esp/esp-idf/export.fish
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>By this point you should have pretty much all you need to compile and flash the board.&lt;/p>
+&lt;p>&lt;strong>Testing&lt;/strong>*
+To test the USB host capability of the board I used the example provided and ran the following commands:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>cd ~/esp/esp-idf/examples/peripherals/usb/host/hid
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>idf.py set-target esp32s3
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>idf.py build
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>idf.py flash
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This will flash the host HID example into the board, but before we can plug the keyboard we need to solder a jumper for the USB-OTG on the back of the board like this:&lt;/p>
+&lt;p>&lt;img src="https://loop0.sh/esp32-jumper.jpg" alt="ESP32-S3 Board USB-OTG Jumper">&lt;/p>
+&lt;p>With that soldered I was able to verify that the board can host the keyboard and power it through the USB-OTG port!&lt;/p>
+&lt;p>&lt;img src="https://loop0.sh/esp32-keyboard.jpg" alt="ESP32-S3 USB Keyboard">&lt;/p>
+&lt;p>And I was also able to verify the board receiving the keypresses by monitoring the serial connection with the following command:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>idf.py monitor
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Hosting a USB HID device is what I believe to be the hardest part on this PoC, and with this initial verification that it works I&amp;rsquo;m pretty confident in continue to work on this. So the following steps on this project are:&lt;/p>
+&lt;ul>
+&lt;li>Connect the two boards using ESP-NOW&lt;/li>
+&lt;li>Write code for the board that will be connected to the PC to act as a keyboard device&lt;/li>
+&lt;li>Write the code to send the keypresses from the keyboard to the PC using the ESP-NOW connection&lt;/li>
+&lt;li>Verify that I can type on the computer wirelessly through the PoC solution&lt;/li>
+&lt;/ul>
+&lt;p>The end goal is that after I can get this PoC working I want to design a board for the keyboard side that will integrate the ESP32 module, a battery, a recharging circuit and a 3d printed case to fit on the keyboard. Everything will be documented here
+and the code and designs will be opensourced.&lt;/p>
+&lt;p>Come hangout and let me know your thoughts on mastodon at &lt;a href="https://freeradical.zone/@loop0">@loop0@freeradical.zone&lt;/a>&lt;/p></description></item><item><title>Running veilid server and cli on macos</title><link>https://loop0.sh/posts/running-veilid-server-and-cli-on-macos/</link><pubDate>Fri, 01 Sep 2023 14:21:19 -0400</pubDate><guid>https://loop0.sh/posts/running-veilid-server-and-cli-on-macos/</guid><description>&lt;p>Hello, I decided to start learning how &lt;a href="https://veilid.com/">veilid&lt;/a> works. So the first thought was to get &lt;code>veilid-server&lt;/code> running on my main machine, which is a macbook pro m1 running macos. I&amp;rsquo;m writing this as a guide to myself in the future in case I need to do this again, but feel free to follow it in case it helps.&lt;/p>
+&lt;p>So, first thing is to clone the veilid repository with the following commands:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ git clone --recurse-submodules https://gitlab.com/veilid/veilid.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ cd veilid
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After that, I run &lt;code>cargo build -p veilid-server&lt;/code> but that didn&amp;rsquo;t work right away, turns out my rust version was a little out-of-date. So, the command to get it updated is:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ rustup update
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If you don&amp;rsquo;t have rust installed yet, you can do it following rust&amp;rsquo;s guide &lt;a href="https://www.rust-lang.org/tools/install">here&lt;/a>.&lt;/p>
+&lt;p>After updating rust, my build was still failing, turns out I had to install a couple more dependencies using brew:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ brew install protobuf capnp
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And now it is time to give &lt;code>veilid-server&lt;/code> build a try:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ cargo build -p veilid-server
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Once the build finishes your binary will be at &lt;code>target/debug/veilid-server&lt;/code>, happy hacking!&lt;/p>
+&lt;p>Ps.: To build &lt;code>veilid-cli&lt;/code> you just have to do &lt;code>cargo build -p veilid-cli&lt;/code>&lt;/p></description></item><item><title>The Cyberdeck Keyboard</title><link>https://loop0.sh/posts/the-cyberdeck-keyboard/</link><pubDate>Sun, 16 Apr 2023 15:03:57 -0400</pubDate><guid>https://loop0.sh/posts/the-cyberdeck-keyboard/</guid><description>&lt;p>So, continuing on my cyberdeck build, this weekend it was time to build its keyboard. The chosen one was a kit from keebd for a 40% ortholinear, using an rp2040 controller and keycaps I chose from drop. Assembling the kit wasn&amp;rsquo;t a hard task, which I will list in the bullet point list below:&lt;/p>
 &lt;ul>
 &lt;li>Put 48 diodes in the motherboard&lt;/li>
 &lt;li>Solder all diodes&lt;/li>
@@ -49,7 +261,15 @@ dev kit boards. The boards have 2 USB-C connections, one for programming and pow
 &lt;li>Add the keycaps&lt;/li>
 &lt;li>Last step was putting the acrylic base plate and add the rubber feet&lt;/li>
 &lt;/ul>
-&lt;p>After all the assembly it was time to get it tested! So I hooked it up with a usb-c to usb-a and connected to my Linux machine. With a quick &lt;code>dmesg&lt;/code> I found out that it was mounting as a storage device, this is something specific to rp2040. So I browsed through the keebd website and I found the controller firmware, with the download file I just needed to drop it into the storage device and the rasbperry pico automatically rebooted and the keyboard was showing at the &lt;code>dmesg&lt;/code> already.&lt;/p></description></item><item><title>I Am Building a Cyberdeck</title><link>https://loop0.sh/posts/i-am-building-a-cyberdeck/</link><pubDate>Sat, 11 Mar 2023 18:30:44 -0500</pubDate><guid>https://loop0.sh/posts/i-am-building-a-cyberdeck/</guid><description>&lt;p>Ever since I got myself a 3D printer I&amp;rsquo;ve been looking for a few projects.
+&lt;p>After all the assembly it was time to get it tested! So I hooked it up with a usb-c to usb-a and connected to my Linux machine. With a quick &lt;code>dmesg&lt;/code> I found out that it was mounting as a storage device, this is something specific to rp2040. So I browsed through the keebd website and I found the controller firmware, with the download file I just needed to drop it into the storage device and the rasbperry pico automatically rebooted and the keyboard was showing at the &lt;code>dmesg&lt;/code> already.&lt;/p>
+&lt;p>From there I did a quick test to make sure all keys were mapped correctly and working and this is the final result!&lt;/p>
+&lt;p>&lt;img src="https://loop0.sh/cyberdeck-mainboard-diodes.jpg" alt="Cyberdeck Diodes">
+&lt;img src="https://loop0.sh/cyberdeck-keyswitches.jpg" alt="Cyberdeck Keyswitches">
+&lt;img src="https://loop0.sh/cyberdeck-keyboard-assembled.jpg" alt="Cyberdeck Keyboard Assembled">
+&lt;img src="https://loop0.sh/cyberdeck-screen-and-keyboard.jpg" alt="Cyberdeck Screen and Keyboard">&lt;/p>
+&lt;p>I love how the screen and keyboad are pretty much the same size, this will make the final build pretty sick with the case I&amp;rsquo;m going to design using OpenSCAD.&lt;/p>
+&lt;p>Let me know on mastodon if you liked it!&lt;/p>
+&lt;p>See you on the next post&lt;/p></description></item><item><title>I Am Building a Cyberdeck</title><link>https://loop0.sh/posts/i-am-building-a-cyberdeck/</link><pubDate>Sat, 11 Mar 2023 18:30:44 -0500</pubDate><guid>https://loop0.sh/posts/i-am-building-a-cyberdeck/</guid><description>&lt;p>Ever since I got myself a 3D printer I&amp;rsquo;ve been looking for a few projects.
 I decided to build a cyberdeck and this is going to be good opportunity to learn how to make CAD models.
 And because tinkering with electronics is something I do as a hobby I think it will be an entertaining project.
 This is what I decided so far for the project:&lt;/p>
@@ -62,7 +282,27 @@ This is what I decided so far for the project:&lt;/p>
 perhaps even some function stuff, like on/off LED&amp;hellip;&lt;/li>
 &lt;/ul>
 &lt;p>I am not yet set if I want io ports in the cyberdeck, and also if it will have internal battery or if I should
-just use a portable external battery and have one usb micro port for power/battery.&lt;/p></description></item><item><title>Quick Updates</title><link>https://loop0.sh/posts/quick-updates/</link><pubDate>Tue, 06 Dec 2022 17:22:42 -0500</pubDate><guid>https://loop0.sh/posts/quick-updates/</guid><description>&lt;p>Soooo, decided to write a quick update on what is going on:&lt;/p>
+just use a portable external battery and have one usb micro port for power/battery.&lt;/p>
+&lt;p>I&amp;rsquo;m going to use this blog to document the whole project.&lt;/p>
+&lt;p>I received the display already in the mail and I had an rpi zero around, so I decided to do a quick bring up:&lt;/p>
+&lt;p>&lt;img src="https://loop0.sh/cyberdeck_bringup.jpg" alt="Cyberdeck bringup">&lt;/p>
+&lt;p>I had some trouble to get the display running under the raspberry pi so I&amp;rsquo;m going to paste here what I had to do.&lt;/p>
+&lt;p>On &lt;code>config.txt&lt;/code> I had to add a bunch of configuration:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># /boot/config.txt&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>max_framebuffer_height&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1920&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_ignore_edid&lt;span style="color:#f92672">=&lt;/span>0xa5000080
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_timings&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">480&lt;/span> &lt;span style="color:#ae81ff">1&lt;/span> &lt;span style="color:#ae81ff">48&lt;/span> &lt;span style="color:#ae81ff">32&lt;/span> &lt;span style="color:#ae81ff">80&lt;/span> &lt;span style="color:#ae81ff">1920&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">3&lt;/span> &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#ae81ff">56&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">60&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">75840000&lt;/span> &lt;span style="color:#ae81ff">3&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_group&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_mode&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">87&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_force_mode&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hdmi_drive&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>config_hdmi_boost&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">4&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>display_hdmi_rotate&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>And the final thing was to append &lt;code>fbcon=rotate:1&lt;/code> to &lt;code>cmdline.txt&lt;/code> to get the correct rotation of the display.
+And the file ended up looking like this:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># /boot/cmdline.txt&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>console&lt;span style="color:#f92672">=&lt;/span>serial0,115200 console&lt;span style="color:#f92672">=&lt;/span>tty1 root&lt;span style="color:#f92672">=&lt;/span>PARTUUID&lt;span style="color:#f92672">=&lt;/span>a105aa79-02 rootfstype&lt;span style="color:#f92672">=&lt;/span>ext4 fsck.repair&lt;span style="color:#f92672">=&lt;/span>yes rootwait fbcon&lt;span style="color:#f92672">=&lt;/span>rotate:1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>That&amp;rsquo;s it for today, now I wait for the keyboard parts to get the project going. See you on the next post.&lt;/p></description></item><item><title>Quick Updates</title><link>https://loop0.sh/posts/quick-updates/</link><pubDate>Tue, 06 Dec 2022 17:22:42 -0500</pubDate><guid>https://loop0.sh/posts/quick-updates/</guid><description>&lt;p>Soooo, decided to write a quick update on what is going on:&lt;/p>
 &lt;ul>
 &lt;li>The self hosted email server worked for a year before I decided to take it down due to lots of maintenances required.
 Servers started to refuse my email all of a sudden, it was an unending race to change configurations and make fixes.
@@ -73,17 +313,54 @@ I learned along the way.&lt;/li>
 &lt;li>I need to upgrade my workstation to have more RAM (who would have thought?)&lt;/li>
 &lt;li>I am updating this blog with new content&lt;/li>
 &lt;/ul></description></item><item><title>Owning my email server</title><link>https://loop0.sh/posts/owning-my-email-server/</link><pubDate>Sat, 23 Oct 2021 15:29:34 -0400</pubDate><guid>https://loop0.sh/posts/owning-my-email-server/</guid><description>&lt;p>A couple weeks ago I decided I should start de-googling and owning my own stuff on the internet, I thought it would be a good exercise to start by hosting my own email server. The attacks that fastmail (my current email provider for this domain) have been taking lately also contributed to the decision of hosting email on my own.&lt;/p>
-&lt;p>Disclaimer: I&amp;rsquo;ve worked for many years in the past as a network/sysadmin and I&amp;rsquo;ve had to admin servers with thousands and thousands of email accounts.&lt;/p></description></item><item><title>Why I am not buying Apple products anymore</title><link>https://loop0.sh/posts/why-i-am-not-buying-apple-products-anymore/</link><pubDate>Fri, 22 Oct 2021 10:21:56 -0400</pubDate><guid>https://loop0.sh/posts/why-i-am-not-buying-apple-products-anymore/</guid><description>&lt;p>I&amp;rsquo;ve decided I&amp;rsquo;m not buying any Apple products anymore, and here are my reasons. I&amp;rsquo;m a long time Linux person, been daily driving it since high school (2002), and I&amp;rsquo;ve always enjoyed it.&lt;/p>
+&lt;p>Disclaimer: I&amp;rsquo;ve worked for many years in the past as a network/sysadmin and I&amp;rsquo;ve had to admin servers with thousands and thousands of email accounts.&lt;/p>
+&lt;p>After spending a couple of hours reading documentation and setting configurations (nothing much changed from 10 years ago) I came with the following stack to start:&lt;/p>
+&lt;ul>
+&lt;li>dovecot as an imap and lmtp server&lt;/li>
+&lt;li>postfix as a smtp server authenticating via dovecot lmtp&lt;/li>
+&lt;li>dns configuration for spf&lt;/li>
+&lt;li>opendkim for DKIM signatures and verification&lt;/li>
+&lt;/ul>
+&lt;p>I&amp;rsquo;ve decided to not have a webmail, since I will always have a device capable of imap and smtp at hand. And I didn&amp;rsquo;t want to have one extra application exposing my server to be exploited. The less attack surface the better.&lt;/p>
+&lt;p>The things that I still have to figure out are:&lt;/p>
+&lt;ul>
+&lt;li>antispam software&lt;/li>
+&lt;li>backup solution&lt;/li>
+&lt;/ul>
+&lt;p>Am I missing something? Please let me know your suggestions for antispam and backup solutions, find me out on mastodon network &lt;code>@loop0@freeradical.zone&lt;/code>&lt;/p></description></item><item><title>Why I am not buying Apple products anymore</title><link>https://loop0.sh/posts/why-i-am-not-buying-apple-products-anymore/</link><pubDate>Fri, 22 Oct 2021 10:21:56 -0400</pubDate><guid>https://loop0.sh/posts/why-i-am-not-buying-apple-products-anymore/</guid><description>&lt;p>I&amp;rsquo;ve decided I&amp;rsquo;m not buying any Apple products anymore, and here are my reasons. I&amp;rsquo;m a long time Linux person, been daily driving it since high school (2002), and I&amp;rsquo;ve always enjoyed it.&lt;/p>
 &lt;p>Over the last years I started to buy into the Apple ecosystem bullshit everyone talks about, and so I bought my first iPhone XS Max, a bulky phone with an OK camera and a weird OS.&lt;/p>
-&lt;p>Coming from Android it was a strange experience not having a back button, sometimes I wouldn&amp;rsquo;t understand why my app had two back buttons at the top on iOS, it is something that always felt like an afterthought from Apple. But I kept using the phone anyways as I didn&amp;rsquo;t intend to spend more money in buying back a different one. I couldn&amp;rsquo;t really understand how the notifications worked too, in Android they all made sense, you would swipe from top and have a list of notifications, but on iOS it would take me to my welcome screen?&lt;/p></description></item><item><title>Restarting My Blog</title><link>https://loop0.sh/posts/restarting-my-blog/</link><pubDate>Sat, 09 Oct 2021 13:19:45 -0400</pubDate><guid>https://loop0.sh/posts/restarting-my-blog/</guid><description>&lt;h1 id="hello-world">Hello, World!&lt;/h1>
+&lt;p>Coming from Android it was a strange experience not having a back button, sometimes I wouldn&amp;rsquo;t understand why my app had two back buttons at the top on iOS, it is something that always felt like an afterthought from Apple. But I kept using the phone anyways as I didn&amp;rsquo;t intend to spend more money in buying back a different one. I couldn&amp;rsquo;t really understand how the notifications worked too, in Android they all made sense, you would swipe from top and have a list of notifications, but on iOS it would take me to my welcome screen?&lt;/p>
+&lt;p>And then I bought my Apple TV, great, 4K, with a sleek UI, but the remote control was just a mess, everytime I would pick it up I would accidentally fast forward (or backwards) my movie or TV show. Fine I can just use my iPhone to control the TV, right? Yeah, except whenever someone else in the house was watching TV and went to search something my iPhone would show me an annoying notification to input text from my phone and breaking my flow on whatever I was doing with my phone at the time.&lt;/p>
+&lt;p>This year I decided to buy a macbook pro m1, because why not? Everyone was talking about how impressed they were with this new Apple&amp;rsquo;s silicon cpu. It is a great little machine and works pretty well for a laptop this size, and being honest I never heard the fans turning on (maybe they came broken?). And since then I tought my mac would be integrated with my iPhone (12 pro now), but somehow it never happened, I never see my texts or incoming calls showing over macOS when I&amp;rsquo;m on my laptop. I&amp;rsquo;ve tried enabling some stuff that I read on the internet, but it didn&amp;rsquo;t help much.&lt;/p>
+&lt;p>And then the last straw comes in when I decided to buy a pair of airpods pro to help me filtering out noise, they won&amp;rsquo;t stay in my ears, even using the smaller tips. I bought some foam tips trying to fix the issue, but that didn&amp;rsquo;t work as well. Also they have some weird glitch whenever I turn my head I can hear a pop coming from the airpods. Sometimes they will pair with my mac but no sound will come out of it, so I have to disconnect and connect them again.&lt;/p>
+&lt;p>In the past years trying to buy into Apple&amp;rsquo;s ecosystem I&amp;rsquo;ve always felt annoyed by Apple&amp;rsquo;s design decisions, like Finder never showing user&amp;rsquo;s home on the favorites and myself having to do some weird flex to add it there. Now my iPhone, starting from iOS 15 will be able to spy on me without my consent (great!).&lt;/p>
+&lt;p>I think using Apple products never clicked for me, maybe it is because I&amp;rsquo;m a power user, who likes to do stuff my way instead of being forced to do it the way Apple thinks it is best for their average user. I&amp;rsquo;m glad I still have other pcs running Linux and that there are people working on bringing Linux to the M1 macs. I&amp;rsquo;m ready to start the transition back to PC and leave Apple&amp;rsquo;s ecosystem (which never worked for me anyways). I will keep my macbook pro m1 and sell the rest of my Apple stuff.&lt;/p></description></item><item><title>Restarting My Blog</title><link>https://loop0.sh/posts/restarting-my-blog/</link><pubDate>Sat, 09 Oct 2021 13:19:45 -0400</pubDate><guid>https://loop0.sh/posts/restarting-my-blog/</guid><description>&lt;h1 id="hello-world">Hello, World!&lt;/h1>
 &lt;p>Hello everybody, I&amp;rsquo;ve decided to restart my blog to share my hobbies.
 This will be a place for me to write stuff that I may need to revisit in the future, or simply to get it out of my head and out into the cyberspace :P&lt;/p>
-&lt;p>In the following days I will be republishing old stuff that I&amp;rsquo;ve written in my previous blog. BTW, I recently joined Mastodon and it has been a breath of fresh air, I got tired of the busy feed on twitter and decided to reconnect with my roots in free software and open source.&lt;/p></description></item><item><title>BIOS update on Thinkpad 600E</title><link>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</link><pubDate>Thu, 25 Jun 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</guid><description>&lt;p>Plugged my IBM usb floppy drive into the 600E and ran the &lt;code>spsdin36.exe E:&lt;/code> to write the files into the diskette.&lt;/p>
+&lt;p>In the following days I will be republishing old stuff that I&amp;rsquo;ve written in my previous blog. BTW, I recently joined Mastodon and it has been a breath of fresh air, I got tired of the busy feed on twitter and decided to reconnect with my roots in free software and open source.&lt;/p>
+&lt;p>The folks at &lt;a href="https://fosstodon.org/">fosstodon&lt;/a> are very nice people, so I encourage you to join too! Feel free to follow me there &lt;code>@loop0&lt;/code>.&lt;/p>
+&lt;p>About my hobbies, ever since I moved to US I&amp;rsquo;ve started collecting retro stuff, like old video game consoles, and I&amp;rsquo;ve got very interested in console modding as well, so a few months later and I already modified my Sony Playstation with a &lt;a href="https://www.black-dog.tech/ps1digital.html">ps1digital&lt;/a> and an &lt;a href="https://castlemaniagames.com/products/xstation">xstation&lt;/a> kit, a Sega Dreamcast with &lt;a href="https://www.black-dog.tech/dcdigital.html">dcdigital&lt;/a> and a &lt;a href="https://gdemu.wordpress.com">gdemu&lt;/a>. I also converted my Gamecube DOL-101 analog port to a &lt;a href="https://www.black-dog.tech/gamecube-dol-101-digital-port-upgrade-kit.html">digital port&lt;/a>. It has been a fun ride learning electronics and soldering a long the way.&lt;/p>
+&lt;p>Besides that, my interest in mechanical watches grew over the past years and I&amp;rsquo;ve started collecting watches and studying about watch history. I guess it is a way to do something out of the digital world and I feel good about it.&lt;/p>
+&lt;p>Lately I&amp;rsquo;ve been doing some research on reverse engineering, which I want to apply to a product that I have which only can be updated via Windows. I&amp;rsquo;m trying to figure out if I can get some code to make the flashing process working on linux as well. I will definitely make a post here with my findings on this subject.&lt;/p>
+&lt;p>Alright, I feel I&amp;rsquo;m done writing for this first post.&lt;/p></description></item><item><title>BIOS update on Thinkpad 600E</title><link>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</link><pubDate>Thu, 25 Jun 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</guid><description>&lt;p>Plugged my IBM usb floppy drive into the 600E and ran the &lt;code>spsdin36.exe E:&lt;/code> to write the files into the diskette.&lt;/p>
 &lt;p>Next step was to make an image from this diskette and make it a bootable CD so I could boot into my 600E.&lt;/p>
-&lt;p>Plugged the usb floppy into my main desktop running linux and did a couple of commands to make an image from the floppy and convert it into an iso cd image.&lt;/p></description></item><item><title>Compiling coreboot + tianocore for my thinkpad x220</title><link>https://loop0.sh/posts/compiling-coreboot-tianocore/</link><pubDate>Sun, 24 May 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/compiling-coreboot-tianocore/</guid><description>&lt;p>Recently I flashed coreboot + tianocore into my thinkpad x220 and I was having some issues to compile it on my Fedora 32. So I used docker to run an older version of the ubuntu to make it compile flawlessly.&lt;/p>
+&lt;p>Plugged the usb floppy into my main desktop running linux and did a couple of commands to make an image from the floppy and convert it into an iso cd image.&lt;/p>
+&lt;p>Making the floppy image:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sudo dd if=/dev/sdb of=spsdin36.img
+&lt;/code>&lt;/pre>&lt;p>Convert from floppy image to iso:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>mkisofs -pad -b spsdin36.img -R -o spsdin36.iso spsdin36.img 
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>I burned the iso image to a cd and booted into my Thinkpad 600E with no problems.
+The update process was like 20 seconds and then it asked me to reboot. Profit!&lt;/p></description></item><item><title>Compiling coreboot + tianocore for my thinkpad x220</title><link>https://loop0.sh/posts/compiling-coreboot-tianocore/</link><pubDate>Sun, 24 May 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/compiling-coreboot-tianocore/</guid><description>&lt;p>Recently I flashed coreboot + tianocore into my thinkpad x220 and I was having some issues to compile it on my Fedora 32. So I used docker to run an older version of the ubuntu to make it compile flawlessly.&lt;/p>
 &lt;p>Here is what I had to do, so inside my coreboot directory I ran the command:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>docker run -it -v /home/loop0/Code/coreboot-4.12:/coreboot:z ubuntu:18.04 /bin/bash
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Once inside bash I had to install a few packages:&lt;/p></description></item><item><title>How to check supported protocols and ciphers on HTTPS</title><link>https://loop0.sh/posts/show-supported-ciphers/</link><pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/show-supported-ciphers/</guid><description>&lt;p>In case you need to check which protocols and ciphers are supported on a HTTPS endpoint you can use nmap for that. Just use the following command, replacing &lt;code>loop0.sh&lt;/code> for the desired domain.&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Once inside bash I had to install a few packages:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>apt-get update
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>apt-get install gnat build-essential libssl-dev pkg-config git flex bison libncurses5-dev wget zlib1g-dev uuid-dev nasm python
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then to proceed on the compilation:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>cd /coreboot
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>make crossgcc-i386 CPUS&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">8&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>make -j8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>At the end of the process if everything goes well you should have a file called &lt;code>coreboot.rom&lt;/code> inside the &lt;code>build&lt;/code> folder. That&amp;rsquo;s it, you&amp;rsquo;re ready to flash the new bios and make your laptop a little more free.&lt;/p></description></item><item><title>How to check supported protocols and ciphers on HTTPS</title><link>https://loop0.sh/posts/show-supported-ciphers/</link><pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/show-supported-ciphers/</guid><description>&lt;p>In case you need to check which protocols and ciphers are supported on a HTTPS endpoint you can use nmap for that. Just use the following command, replacing &lt;code>loop0.sh&lt;/code> for the desired domain.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>nmap --script ssl-enum-ciphers -p &lt;span style="color:#ae81ff">443&lt;/span> loop0.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The previous command should give you an output like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>Nmap scan report &lt;span style="color:#66d9ef">for&lt;/span> loop0.sh &lt;span style="color:#f92672">(&lt;/span>104.24.102.73&lt;span style="color:#f92672">)&lt;/span>

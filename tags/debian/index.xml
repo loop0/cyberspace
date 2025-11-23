@@ -5,4 +5,103 @@ So I decided to learn how to compile a custom kernel and I will try to document 
 &lt;blockquote>
 &lt;p>&lt;code>INSTRUCTIONS&lt;/code>:
 The character &lt;code>$&lt;/code> found at the beginning tells that the following is a command to be run in a shell.
-If you are copy and pasting, make sure you ommit the &lt;code>$&lt;/code> char.&lt;/p></description></item></channel></rss>
+If you are copy and pasting, make sure you ommit the &lt;code>$&lt;/code> char.&lt;/p>&lt;/blockquote>
+&lt;p>This was executed on stock debian 13.2 YMMV:&lt;/p>
+&lt;ol>
+&lt;li>Download the kernel source code tarball from &lt;a href="https://kernel.org">https://kernel.org&lt;/a>&lt;/li>
+&lt;li>Install the following dependencies:&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo apt install build-essential dkms flex bison libdw-dev libelf-dev libssl-dev libssl-dev rsync debhelper-compat sbsigntool ncurses-dev
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="3">
+&lt;li>Generate the dkms signing keys&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo dkms generate_mok
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="4">
+&lt;li>Import your dkms keys to be enrolled in secure boot&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo mokutil --import /var/lib/dkms/mok.pub
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="5">
+&lt;li>Reboot your computer, your bios should show a utility to enroll the newly imported key&lt;/li>
+&lt;li>Lets export certificate of the key you just enrolled&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ cd /tmp
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo mokutil --export
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># This can generate many files with the filename following the pattern MOK-0001.der&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Run the following command file by file until you find your DKMS keys&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ openssl x509 -inform DER -in MOK-0002.der -text -noout | grep &lt;span style="color:#e6db74">&amp;#34;Subject:&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> Subject: CN&lt;span style="color:#f92672">=&lt;/span>DKMS module signing key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Once you find the key with the DKMS subject you can export the certificate&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo openssl x509 -inform DER -in MOK-0002.der -outform PEM -out /var/lib/dkms/mok.crt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="7">
+&lt;li>Lets proceed to extract the linux kernel source code from the tarball you download on step 1&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ tar xfv ~/Downloads/linux-6.17.8.tar.xz
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ cd linux-6.17.8
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="8">
+&lt;li>Now is the time to configure your kernel, we begin by using the config provided by the current kernel as a starting point&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ cp /boot/config-6.12.57+deb13-amd64 .config
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="9">
+&lt;li>Lets disable the debug info (optional)&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ scripts/config --disable DEBUG_INFO
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="10">
+&lt;li>One last step before compiling the kernel, lets copy the signing key&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo cp /var/lib/dkms/mok.key certs/mok.key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo cat /var/lib/dkms/mok.crt &amp;gt;&amp;gt; certs/mok.key
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo chown $USER certs/mok.key
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="11">
+&lt;li>Now to the step that we compile the kernel and generate a .deb package for installation&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># Adjust the number from -j16 to the number of cores your computer has for faster compilation&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># LOCALVERSION is optional, you can change it to anything you want, it will become part of the kernel version&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># The make command will ask you for configuration options that don&amp;#39;t exist from the current kernel config that&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># we used as a starting point, you can proceed to just hit return to use the default or run make nconfig to &lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># configure your kernel using a terminal UI&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ make -j16 bindeb-pkg CONFIG_MODULE_SIG_KEY&lt;span style="color:#f92672">=&lt;/span>certs/mok.key SIGN_KEY&lt;span style="color:#f92672">=&lt;/span>certs/mok.key LOCALVERSION&lt;span style="color:#f92672">=&lt;/span>-loop0-rt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="12">
+&lt;li>Before you install the newly generated debian package lets add a kernel post install hook to take care of the
+signing part&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo bash -c &lt;span style="color:#e6db74">&amp;#39;cat &amp;lt;&amp;lt; EOF &amp;gt; /etc/kernel/postinst.d/zz-sign-kernel
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">#!/bin/bash
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">set -e
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"># Path to your signing key and certificate
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">SIGN_KEY=&amp;#34;/var/lib/dkms/mok.key&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">SIGN_CERT=&amp;#34;/var/lib/dkms/mok.crt&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"># The kernel image to sign
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">KERNEL_IMAGE=&amp;#34;\$2&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">if [ -f &amp;#34;\$KERNEL_IMAGE&amp;#34; ] &amp;amp;&amp;amp; [ -f &amp;#34;\$SIGN_KEY&amp;#34; ] &amp;amp;&amp;amp; [ -f &amp;#34;\$SIGN_CERT&amp;#34; ]; then
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Signing kernel image: \$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> sbsign --key &amp;#34;\$SIGN_KEY&amp;#34; --cert &amp;#34;\$SIGN_CERT&amp;#34; --output &amp;#34;\$KERNEL_IMAGE.signed&amp;#34; &amp;#34;\$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> 
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> # Replace the unsigned kernel with the signed one
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> mv &amp;#34;\$KERNEL_IMAGE.signed&amp;#34; &amp;#34;\$KERNEL_IMAGE&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> 
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Kernel signed successfully&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">else
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74"> echo &amp;#34;Warning: Could not sign kernel - missing kernel image or signing keys&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">fi
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">exit 0
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#e6db74">EOF&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ sudo chmod +x /etc/kernel/postinst.d/zz-sign-kernel
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="13">
+&lt;li>Now you should be able to install your new kernel&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>$ sudo apt install ../linux-image-6.17.8-loop0-rt_6.17.8-13_amd64.deb
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="14">
+&lt;li>Reboot and check if your new kernel worked, if you can&amp;rsquo;t boot just go to the advanced section on grub screen
+and you should be able to boot your old kernel&lt;/li>
+&lt;/ol>
+&lt;p>Enjoy! If you find any issue in the instructions, please let me know so I can fix it, thanks!&lt;/p>
+&lt;h2 id="references">References&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://kernel-team.pages.debian.net/kernel-handbook/index.html">Debian Kernel Handbook&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://wiki.debian.org/SecureBoot#MOK_-_Machine_Owner_Key">Debian Secure Boot&lt;/a>&lt;/li>
+&lt;/ul></description></item></channel></rss>

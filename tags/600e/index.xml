@@ -1,3 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>600E on loop0</title><link>https://loop0.sh/tags/600e/</link><description>Recent content in 600E on loop0</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Thu, 25 Jun 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://loop0.sh/tags/600e/index.xml" rel="self" type="application/rss+xml"/><item><title>BIOS update on Thinkpad 600E</title><link>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</link><pubDate>Thu, 25 Jun 2020 00:00:00 +0000</pubDate><guid>https://loop0.sh/posts/creating-bios-boot-cd-from-floppy/</guid><description>&lt;p>Plugged my IBM usb floppy drive into the 600E and ran the &lt;code>spsdin36.exe E:&lt;/code> to write the files into the diskette.&lt;/p>
 &lt;p>Next step was to make an image from this diskette and make it a bootable CD so I could boot into my 600E.&lt;/p>
-&lt;p>Plugged the usb floppy into my main desktop running linux and did a couple of commands to make an image from the floppy and convert it into an iso cd image.&lt;/p></description></item></channel></rss>
+&lt;p>Plugged the usb floppy into my main desktop running linux and did a couple of commands to make an image from the floppy and convert it into an iso cd image.&lt;/p>
+&lt;p>Making the floppy image:&lt;/p>
+&lt;pre tabindex="0">&lt;code>sudo dd if=/dev/sdb of=spsdin36.img
+&lt;/code>&lt;/pre>&lt;p>Convert from floppy image to iso:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>mkisofs -pad -b spsdin36.img -R -o spsdin36.iso spsdin36.img 
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>I burned the iso image to a cd and booted into my Thinkpad 600E with no problems.
+The update process was like 20 seconds and then it asked me to reboot. Profit!&lt;/p></description></item></channel></rss>
